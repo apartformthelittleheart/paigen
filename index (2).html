@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="style.css"><title>Paigen – Gen Z News, Videos & Chat</title><meta name="description" content="Gen Z news, protest updates, news channel videos, reels, chat, calls and weather."></head>
+<body>
+<header class="hero"><div class="wrap">
+ <div><span class="eye">Gen Z · News · Community</span><h1>The world's youth are speaking. Listen in.</h1>
+ <p>Protest updates from India and across the globe, live news channels, reels, chat, calls and weather.</p>
+ <a class="btn" href="news.html">Read latest news</a> <a class="btn o" href="videos.html">Watch news videos</a>
+ <div class="stats"><div><b>10</b><small>Protest hotspots</small></div><div><b>10+</b><small>News channels</small></div><div><b>6</b><small>Pages</small></div></div></div>
+ <div><canvas id="globe"></canvas><div class="spots" id="spots"></div><div class="hint">Drag the globe · tap a country</div></div>
+</div></header>
+<section><div class="wrap"><div class="sec"><small>Explore</small><h2>Everything in one place</h2><p>Hover a card to flip it, click to open.</p></div>
+<div class="flips">
+ <a class="flip" href="news.html"><div><div class="f"><span>📰</span><b>News</b></div><div class="b"><em>Gen Z news</em>Protests in India and abroad, with sources.<em>Open →</em></div></div></a>
+ <a class="flip" href="videos.html"><div><div class="f"><span>📺</span><b>Videos</b></div><div class="b"><em>News channels</em>BBC (English + Hindi), Al Jazeera, DW and more.<em>Open →</em></div></div></a>
+ <a class="flip" href="reels.html"><div><div class="f"><span>🎬</span><b>Reels</b></div><div class="b"><em>Short videos</em>Add a video and scroll like on your phone.<em>Open →</em></div></div></a>
+ <a class="flip" href="chat.html"><div><div class="f"><span>💬</span><b>Chat &amp; Calls</b></div><div class="b"><em>Talk and share</em>Messages, photos, documents, location, video calls.<em>Open →</em></div></div></a>
+ <a class="flip" href="weather.html"><div><div class="f"><span>🌦</span><b>Weather &amp; Map</b></div><div class="b"><em>Any city</em>Live weather, forecast and a map.<em>Open →</em></div></div></a>
+</div></div></section>
+<section style="padding-top:10px"><div class="wrap"><div class="sec"><small>Latest</small><h2>Top stories</h2></div><div class="grid" id="top"></div>
+<p style="margin-top:22px"><a class="btn o" href="news.html">All news →</a></p></div></section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="site.js"></script>
+<script>
+$("#top").innerHTML=NEWS.filter(n=>n.url!=="#").slice(0,3).map(newsCard).join("");tiltAll();
+/* ===== 3D globe: dots, hotspot pulses, arcs from India, satellite, star field ===== */
+const SPOTS=[["India",20.6,78.9,1],["Nepal",28.4,84.1],["Bangladesh",23.7,90.4],["Indonesia",-6.2,106.8],["Kenya",-1.3,36.8],["Madagascar",-18.9,47.5],["Morocco",31.8,-7],["Peru",-12,-77],["Mexico",19.4,-99.1],["Serbia",44.8,20.5]];
+const rad=d=>d*Math.PI/180,vec=(la,lo,r=1)=>new THREE.Vector3(Math.cos(rad(la))*Math.sin(rad(lo))*r,Math.sin(rad(la))*r,Math.cos(rad(la))*Math.cos(rad(lo))*r);
+let target=null,goTo=()=>{};
+(function(){
+ const cv=$("#globe");if(!window.THREE){cv.style.display="none";return}
+ const rd=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});rd.setPixelRatio(Math.min(devicePixelRatio,2));
+ const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.z=4.4;
+ const g=new THREE.Group();sc.add(g);
+ g.add(new THREE.Mesh(new THREE.SphereGeometry(.985,48,48),new THREE.MeshBasicMaterial({color:0x0f1830})));
+ g.add(new THREE.Mesh(new THREE.SphereGeometry(1.13,48,48),new THREE.MeshBasicMaterial({color:0x3f6fd8,transparent:true,opacity:.09,side:THREE.BackSide})));
+ const N=3200,pos=new Float32Array(N*3),ga=Math.PI*(3-Math.sqrt(5));
+ for(let i=0;i<N;i++){const y=1-2*(i+.5)/N,r=Math.sqrt(1-y*y),a=ga*i;pos.set([Math.cos(a)*r,y,Math.sin(a)*r],i*3)}
+ const pg=new THREE.BufferGeometry();pg.setAttribute("position",new THREE.BufferAttribute(pos,3));
+ g.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0x9db8f0,size:.016,transparent:true,opacity:.85})));
+ const rings=[],home=vec(SPOTS[0][1],SPOTS[0][2]);
+ SPOTS.forEach(([n,la,lo,big],i)=>{
+  const p=vec(la,lo,1.004),col=big?0xe8a838:0xe0704a;
+  const m=new THREE.Mesh(new THREE.SphereGeometry(big?.032:.022,16,16),new THREE.MeshBasicMaterial({color:col}));m.position.copy(p);g.add(m);
+  const rg=new THREE.Mesh(new THREE.RingGeometry(.03,.042,32),new THREE.MeshBasicMaterial({color:col,transparent:true,side:THREE.DoubleSide}));
+  rg.position.copy(p);rg.lookAt(p.clone().multiplyScalar(2));rg.userData.o=i*.7;g.add(rg);rings.push(rg);
+  if(i){const pts=[];for(let k=0;k<=40;k++){const t=k/40,v=home.clone().lerp(p,t).normalize().multiplyScalar(1.004+Math.sin(Math.PI*t)*.28*home.distanceTo(p)/2);pts.push(v)}
+   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xe8a838,transparent:true,opacity:.32})))}
+ });
+ // orbit ring + satellite
+ const orb=new THREE.Group();orb.rotation.set(1.0,0,.35);sc.add(orb);
+ const op=[];for(let i=0;i<=128;i++){const a=i/128*Math.PI*2;op.push(new THREE.Vector3(Math.cos(a)*1.55,0,Math.sin(a)*1.55))}
+ orb.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(op),new THREE.LineBasicMaterial({color:0x5b8def,transparent:true,opacity:.35})));
+ const sat=new THREE.Mesh(new THREE.OctahedronGeometry(.045),new THREE.MeshBasicMaterial({color:0xffffff}));orb.add(sat);
+ // stars
+ const SN=900,sp=new Float32Array(SN*3);for(let i=0;i<SN;i++){const r=9+Math.random()*14,a=Math.random()*6.283,b=Math.acos(2*Math.random()-1);sp.set([r*Math.sin(b)*Math.cos(a),r*Math.cos(b),r*Math.sin(b)*Math.sin(a)],i*3)}
+ const sg=new THREE.BufferGeometry();sg.setAttribute("position",new THREE.BufferAttribute(sp,3));
+ const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xcfd8ee,size:.05,transparent:true,opacity:.7}));sc.add(stars);
+ g.rotation.set(.25,-1.3,0);
+ let drag=false,lx=0,ly=0,t0=0;
+ cv.addEventListener("pointerdown",e=>{drag=true;target=null;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId)});
+ cv.addEventListener("pointermove",e=>{if(!drag)return;g.rotation.y+=(e.clientX-lx)*.006;g.rotation.x=Math.max(-1.1,Math.min(1.1,g.rotation.x+(e.clientY-ly)*.005));lx=e.clientX;ly=e.clientY});
+ cv.addEventListener("pointerup",()=>drag=false);
+ goTo=(la,lo)=>{target={x:rad(la),y:-rad(lo)};clearTimeout(t0);t0=setTimeout(()=>target=null,5000)};
+ const size=()=>{const w=cv.clientWidth,h=cv.clientHeight;rd.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};addEventListener("resize",size);size();
+ const wrap=a=>((a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+ (function loop(t){
+  if(!drag){if(target){g.rotation.y+=wrap(target.y-g.rotation.y)*.07;g.rotation.x+=(target.x-g.rotation.x)*.07}else g.rotation.y+=.0022}
+  rings.forEach(r=>{const k=((t/1000+r.userData.o)%2)/2;r.scale.setScalar(1+k*2.2);r.material.opacity=.7*(1-k)});
+  sat.position.set(Math.cos(t/1500)*1.55,0,Math.sin(t/1500)*1.55);stars.rotation.y=t/90000;
+  rd.render(sc,cam);requestAnimationFrame(loop)})(0);
+})();
+$("#spots").innerHTML=SPOTS.map(s=>`<button>${s[0]}</button>`).join("");
+$$("#spots button").forEach((b,i)=>b.onclick=()=>goTo(SPOTS[i][1],SPOTS[i][2]));
+</script></body></html>

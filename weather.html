@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="style.css"><title>Weather & Map – Paigen</title></head><body>
+<div class="wrap ph"><span class="eye">Weather &amp; Map</span><h1>Check any city</h1><p>Live weather, a 3-day forecast and a map of the place.</p></div>
+<section style="padding-top:20px"><div class="wrap" style="max-width:860px">
+<div class="bar" style="margin:0 0 16px"><input type="text" id="city" placeholder="Search city, e.g. Delhi"><button class="btn" id="go">Search</button><button class="btn o" id="me">📍 My location</button></div>
+<div class="card"><div class="wx" id="wxOut">Loading…</div></div><iframe id="map" loading="lazy"></iframe>
+</div></section>
+<script src="site.js"></script><script>
+async function weather(lat,lon,name){$("#wxOut").textContent="Loading…";
+ try{const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=4`)).json();
+  const c=j.current,[ic,tx]=WMO(c.weather_code);
+  $("#wxOut").innerHTML=`<div><div class="big">${ic} ${Math.round(c.temperature_2m)}°C</div><div>${esc(name)} · ${tx}</div></div>
+  <div>Feels like ${Math.round(c.apparent_temperature)}°C<br>Humidity ${c.relative_humidity_2m}%<br>Wind ${c.wind_speed_10m} km/h</div>
+  <div>${j.daily.time.slice(1).map((d,i)=>`${new Date(d).toLocaleDateString(undefined,{weekday:"short"})} ${WMO(j.daily.weather_code[i+1])[0]} ${Math.round(j.daily.temperature_2m_min[i+1])}°–${Math.round(j.daily.temperature_2m_max[i+1])}°`).join("<br>")}</div>`;
+  const m=$("#map");m.style.display="block";m.src=`https://www.openstreetmap.org/export/embed.html?bbox=${lon-.08}%2C${lat-.05}%2C${+lon+.08}%2C${+lat+.05}&layer=mapnik&marker=${lat}%2C${lon}`;
+ }catch(e){$("#wxOut").textContent="Could not load weather. Check your internet."}}
+async function search(){const q=$("#city").value.trim();if(!q)return;
+ const r=await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1`)).json();
+ if(!r.results)return alert("City not found");const p=r.results[0];weather(p.latitude,p.longitude,p.name+", "+(p.country||""))}
+$("#go").onclick=search;$("#city").onkeydown=e=>{if(e.key==="Enter")search()};
+$("#me").onclick=()=>navigator.geolocation.getCurrentPosition(p=>weather(p.coords.latitude,p.coords.longitude,"Your location"),()=>alert("Location permission denied"));
+weather(28.6139,77.2090,"New Delhi");
+</script></body></html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="style.css"><title>Chat & Calls – Paigen</title></head><body>
+<div class="wrap ph"><span class="eye">Chat &amp; Calls</span><h1>Talk, share, call</h1><p>Messages, photos, videos, documents, your location, and free video or voice calls.</p></div>
+<section style="padding-top:20px"><div class="wrap" style="max-width:800px">
+<div id="log"></div>
+<div class="bar"><input type="text" id="msg" placeholder="Type a message…"><button class="btn" id="send">Send</button></div>
+<div class="bar"><label class="btn o">📷 Photo / Video<input id="media" type="file" accept="image/*,video/*" hidden></label><label class="btn o">📄 Document<input id="doc" type="file" hidden></label><button class="btn o" id="shareLoc">📍 Share location</button></div>
+<p class="note">Demo chat: messages sync between tabs of the same browser. Real chat between different people needs a backend (Firebase or Supabase).</p>
+<div class="card" style="margin-top:34px"><h3 style="margin-top:0">📞 Start a call</h3><p>Free calls with Jitsi Meet. No signup. Share the link with a friend.</p>
+<div class="bar" style="margin:0"><input type="text" id="room" placeholder="Room name, e.g. mygang"></div>
+<div class="bar"><button class="btn" id="vcall">📹 Video call</button><button class="btn o" id="acall">🎤 Voice call</button><button class="btn o" id="copy">🔗 Copy link</button></div></div>
+</div></section>
+<script src="site.js"></script><script>
+const log=$("#log"),bc="BroadcastChannel"in window?new BroadcastChannel("paigen"):null,me="u"+Math.random().toString(36).slice(2,6);
+function add(m,mine){const d=document.createElement("div");d.className="msg"+(mine?" me":"");d.innerHTML=`<small>${mine?"You":m.from}</small>`+m.html;log.appendChild(d);log.scrollTop=log.scrollHeight}
+function post(html){const m={from:me,html};add(m,true);bc&&bc.postMessage(m)}
+if(bc)bc.onmessage=e=>add(e.data,false);
+add({from:"Paigen",html:"Welcome! Open this page in a second tab to try the demo chat."},false);
+$("#send").onclick=()=>{const t=$("#msg").value.trim();if(t){post(esc(t));$("#msg").value=""}};
+$("#msg").onkeydown=e=>{if(e.key==="Enter")$("#send").click()};
+$("#media").onchange=e=>{const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f);post(f.type.startsWith("video")?`<video src="${u}" controls></video>`:`<img src="${u}" alt="">`)};
+$("#doc").onchange=e=>{const f=e.target.files[0];if(f)post(`📄 ${esc(f.name)} <small>${(f.size/1024).toFixed(0)} KB</small>`)};
+$("#shareLoc").onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{const{latitude:a,longitude:b}=p.coords;
+ post(`📍 My location: <a target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${a}&mlon=${b}#map=16/${a}/${b}">open map</a>`)},()=>alert("Location permission denied")):alert("Location not supported");
+const roomUrl=()=>"https://meet.jit.si/Paigen-"+encodeURIComponent(($("#room").value.trim()||"lobby").replace(/\s+/g,"-"));
+$("#vcall").onclick=()=>open(roomUrl(),"_blank");
+$("#acall").onclick=()=>open(roomUrl()+"#config.startWithVideoMuted=true","_blank");
+$("#copy").onclick=()=>navigator.clipboard.writeText(roomUrl()).then(()=>alert("Link copied. Send it to your friend."));
+</script></body></html>

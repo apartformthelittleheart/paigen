@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="style.css"><title>Reels – Paigen</title></head><body>
+<section><div class="wrap two">
+ <div class="phone"><div id="reelFeed"></div></div>
+ <div><div class="sec"><small>Reels</small><h2>Short videos, vertical scroll</h2><p>Add a video and scroll like on your phone. Tap a video to unmute.</p></div>
+ <label class="btn" style="cursor:pointer">＋ Add reel<input id="reelIn" type="file" accept="video/*" multiple hidden></label>
+ <p class="note">Reels you add play on your device only. A public shared feed needs a backend (Firebase Storage or Supabase).</p></div>
+</div></section>
+<script src="site.js"></script><script>
+const feed=$("#reelFeed");feed.innerHTML=`<div class="empty">No reels yet.<br>Tap “Add reel” to upload a video.</div>`;
+const io=new IntersectionObserver(es=>es.forEach(en=>{const v=en.target.querySelector("video");en.isIntersecting?v.play().catch(()=>{}):v.pause()}),{threshold:.7});
+$("#reelIn").onchange=e=>{if(feed.querySelector(".empty"))feed.innerHTML="";
+ [...e.target.files].forEach(f=>{const d=document.createElement("div");d.className="reel";
+  d.innerHTML=`<video src="${URL.createObjectURL(f)}" loop muted playsinline></video><div class="cap"><b>@you</b><br>${esc(f.name)}</div>`;
+  d.querySelector("video").onclick=ev=>ev.target.muted=!ev.target.muted;feed.appendChild(d);io.observe(d)})};
+</script></body></html>
